@@ -1,0 +1,175 @@
+/* ===== Games row: PS2-style cases (DESIGN.md §15). Tokens only. ===== */
+
+.shelf {
+  position: relative;
+  grid-row: 3;
+  inline-size: 100%;
+  max-inline-size: var(--shelf-max-w);
+  margin-block-start: var(--space-3);
+  container-type: inline-size; /* the cases size themselves from the shelf width (cqi) */
+}
+.shelf[hidden] { display: none; }
+
+.shelf__row {
+  /* --case-per-row across the shelf (a fraction, so the next case peeks), between a floor and a ceiling,
+     and never taller than the screen allows */
+  --case-w: max(var(--case-min-w), min(
+    calc((100cqi - (var(--case-per-row) - 1) * var(--case-gap)) / var(--case-per-row)),
+    var(--case-max-w),
+    calc((100dvh - var(--shelf-reserve)) * var(--case-aspect))));
+  display: flex;
+  gap: var(--case-gap);
+  margin: 0 calc(-1 * var(--gutter)); /* bleeds into the page gutters: the row runs to the screen edges */
+  padding: var(--shelf-pad-top) var(--gutter) var(--shelf-pad-bottom);
+  list-style: none;
+  overflow-x: auto;
+  overflow-y: hidden; /* the vertical padding gives room for the lift, the tilt, the focus ring and the shadow */
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.shelf::after { /* more cases to the right: a soft shade on the right edge (results.ts sets data-more on the row while scrollLeft < max).
+  A static overlay: a mask on the scroller itself is re-composited every frame over the live background (measured: dropped frames).
+  The mask below is on this static pseudo-element only, so it is cheap */
+  content: "";
+  position: absolute;
+  inset-block: var(--shelf-pad-top) var(--shelf-pad-bottom);
+  inset-inline-end: calc(-1 * var(--gutter));
+  inline-size: var(--shelf-fade);
+  background: linear-gradient(to left, var(--shelf-edge), transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 80%, transparent); /* static pseudo: its ends fade, no hard edge below the cases */
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+  pointer-events: none;
+}
+.shelf:has(.shelf__row[data-more])::after { opacity: 1; }
+.shelf[aria-busy="true"] .shelf__row { opacity: var(--shelf-busy-opacity); } /* a new search is running (the row is inert too) */
+
+.shelf__item {
+  position: relative;
+  flex: none;
+  scroll-snap-align: start;
+  animation: case-in var(--dur-slow) var(--ease-spring) calc(var(--i) * var(--stagger)) backwards; /* not "both": a filled animation keeps 20 layers promoted (measured: dropped frames over the live background) */
+}
+.shelf__item::before { /* the big shadow: drawn only for the hovered / focused case (opacity), a light one stays on every case */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-case);
+  box-shadow: var(--case-shadow-lift);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+  pointer-events: none;
+}
+@keyframes case-in {
+  from { opacity: 0; translate: 0 calc(var(--case-rise) * var(--motion-scale)); }
+}
+
+/* ---------- The case ---------- */
+.case {
+  --rx: 0deg;
+  --ry: 0deg;
+  --lift: 0px;
+  --sheen: 0;
+  position: relative;
+  display: grid;
+  grid-template-rows: var(--case-band) 1fr;
+  inline-size: var(--case-w);
+  aspect-ratio: var(--case-aspect); /* a DVD-style PS2 case */
+  overflow: hidden;
+  container-type: inline-size; /* text sizes follow the case width */
+  border-radius: var(--radius-case);
+  background: var(--case-plastic);
+  box-shadow: 0 0 0 var(--border-hairline) var(--case-rim), var(--case-shadow-rest);
+  color: var(--case-text);
+  text-decoration: none;
+  transform: perspective(var(--case-perspective)) translateY(var(--lift)) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.case::after { /* clear plastic sleeve: hairline highlight on the edge and the hinge side */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 var(--border-hairline) var(--case-sleeve), inset 3px 0 0 var(--case-sleeve);
+  pointer-events: none;
+}
+
+.case__band { /* the black top band of a game case: the year on the right, and a rainbow hairline under it */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 7%;
+  background: var(--case-band-bg);
+  border-block-end: var(--case-line-w) solid transparent;
+  border-image: var(--case-iridescent) 1;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: var(--weight-display);
+  font-stretch: var(--font-stretch-display-compact);
+  font-size: var(--case-band-size);
+  line-height: 1;
+}
+.case__year { color: var(--knox-shine); }
+
+.case__cover { position: relative; overflow: hidden; background: var(--case-fallback); }
+.case__cover::before { /* moving sheen over the art only (below the title's dark plate): follows the pointer through --sheen (-1..1) */
+  content: "";
+  position: absolute;
+  inset: 0 -40%;
+  z-index: 1;
+  background: var(--case-sheen);
+  translate: calc(var(--sheen) * 18%) 0;
+  transition: translate var(--dur-fast) var(--ease-out);
+}
+.case__art {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover; /* RAWG gives landscape screenshots: the centre is cropped to the cover's 3:4 */
+}
+
+.case__title { /* the dark plate starts just above the text and runs to the bottom edge: AA on any art (§15.6) */
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 2;
+  padding: var(--case-title-fade) 8% var(--case-title-inset);
+  background: linear-gradient(transparent, var(--case-scrim) var(--case-title-fade));
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: var(--weight-display);
+  font-stretch: var(--font-stretch-display-compact);
+  font-size: var(--case-title-size);
+  line-height: var(--leading-tight);
+}
+.case__name { /* the clamp lives on the inner span: the plate's padding never shows a 4th line */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+
+/* No image (RAWG failed): the cover keeps its colour block and the title grows */
+.case--noimg .case__art { display: none; }
+.case--noimg .case__title { font-size: var(--case-title-size-noimg); }
+
+/* ---------- Interaction: hover is read on the li (it never moves), so a lifted case does not lose it ---------- */
+@media (hover: hover) {
+  .shelf__item:hover .case { --lift: var(--case-lift); }
+  .shelf__item:hover::before { opacity: 1; }
+}
+.case:focus-visible { --lift: var(--case-lift); --rx: var(--case-focus-tilt); outline-offset: var(--case-focus-offset); }
+.shelf__item:has(.case:focus-visible)::before { opacity: 1; }
+.case:active { --lift: 0px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .case,
+  .shelf__item:hover .case,
+  .case:focus-visible { transform: none; transition: none; }
+  .case__cover::before { translate: none; transition: none; }
+}

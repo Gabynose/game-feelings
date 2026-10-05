@@ -1,0 +1,20 @@
+{
+  "name": "game-feelings",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "verify": "node scripts/verify.mjs",
+    "verify:contrast": "node scripts/holo-contrast.mjs",
+    "verify:vocab": "node scripts/verify-vocab.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}

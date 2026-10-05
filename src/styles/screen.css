@@ -1,0 +1,319 @@
+/* ===== Single screen: title, narrator, feeling form, shelf slot (DESIGN.md §14). Tokens only. ===== */
+
+body { overflow-x: clip; } /* the Chao enters from -100vw: never a horizontal scrollbar (clip, not hidden: no scroll container) */
+
+#app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-block-size: 100dvh;
+}
+
+/* ---------- Top bar: theme toggle only ---------- */
+.top-bar {
+  position: relative;
+  z-index: var(--z-chrome);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--gutter) 0;
+}
+
+.sound-toggle svg { inline-size: var(--space-5); block-size: var(--space-5); }
+.sound-toggle[aria-pressed="true"] .sound-toggle__waves,
+.sound-toggle[aria-pressed="false"] .sound-toggle__off { display: none; }
+@media (max-width: 23.4rem) { .top-bar { padding-block-end: var(--space-2); } }
+.bubble__pending { visibility: hidden; } /* keeps its place (no reflow) and, unlike color: transparent, forced-colors cannot reveal it */
+
+/* Plastic material (DESIGN §5) */
+.theme-toggle,
+.sound-toggle,
+.bubble {
+  background: var(--plastic-bg);
+  border: var(--border-hairline) solid var(--plastic-rim);
+  box-shadow: var(--shadow-plastic);
+}
+
+.theme-toggle,
+.sound-toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-inline-size: var(--space-7);
+  min-block-size: var(--space-7);
+  padding: var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) { .sound-toggle { display: none; } } /* no typing, no blips (DESIGN §17.4) */
+.theme-toggle__icon { /* half-filled disc: "contrast / theme" without an icon set */
+  inline-size: var(--space-5);
+  block-size: var(--space-5);
+  border-radius: var(--radius-pill);
+  border: var(--border-control) solid currentColor;
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+}
+
+/* Hover glow on ::after so only its opacity animates (toggle and submit) */
+.theme-toggle::after,
+.sound-toggle::after,
+.feeling__submit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--glow-accent);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+  pointer-events: none;
+}
+.theme-toggle:active,
+.sound-toggle:active,
+.feeling__submit:not(:disabled):active {
+  transform: scale(var(--press-scale));
+  box-shadow: var(--shadow-plastic-pressed);
+}
+
+/* ---------- Screen grid: intro = stage centred a little above the middle; compact = stage on top + shelf ---------- */
+.screen {
+  display: grid;
+  grid-template-rows: 1fr auto 1.22fr; /* 1 : 1.22 puts the stage's centre at ~45 % (DESIGN §10) */
+  grid-template-columns: minmax(0, 1fr); /* the column never grows past the screen: an input's intrinsic width (size=20) used to push it to 363 px at 320 */
+  justify-items: center;
+  min-inline-size: 0;
+  padding: 0 var(--gutter) var(--space-6);
+}
+
+.screen__stage {
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); /* same: children shrink to the screen instead of widening it */
+  justify-items: center;
+  gap: var(--space-4);
+  inline-size: 100%;
+}
+
+/* FLIP targets: origins live here so the JS keyframes carry only translate/scale (compositor-friendly) */
+.screen__title { display: grid; justify-items: center; transform-origin: 0 0; } /* an ancestor of .title-wrap, which bounces */
+.feeling { transform-origin: 0 0; }
+
+/* Knox lettering, 3 layers (DESIGN §3.1) */
+.title {
+  position: relative;
+  isolation: isolate;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: var(--weight-display-heavy);
+  font-stretch: var(--font-stretch-display);
+  font-size: var(--title-size);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+  text-align: center;
+  color: transparent;
+  transform: skewX(var(--knox-skew));
+}
+.title::before,
+.title::after {
+  content: attr(data-text) / "";
+  position: absolute;
+  inset: 0;
+}
+.title::before {
+  z-index: -1;
+  color: var(--knox-extrude-1);
+  text-shadow: var(--knox-ring);
+  filter: var(--knox-extrusion);
+}
+.title::after {
+  color: transparent;
+  background: var(--knox-gloss);
+  background-size: 100% 1lh;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* ---------- Narrator: Chao + bubble with a tail ---------- */
+.narrator {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(var(--space-3) + var(--bubble-tail)); /* the tail lives in the gap */
+  max-inline-size: 100%;
+  padding-block-start: calc(var(--chao-current) * var(--chao-headroom)); /* room for the happy jump + ball (DESIGN §13.15) */
+  transform-origin: 0 100%; /* FLIP: anchored at its bottom edge */
+}
+.narrator .chao { transform-origin: 0 100%; } /* FLIP scale; chao.css sets no origin on .chao itself */
+
+/* Chao = "Start over" (DESIGN §18.1): compact only, never in detail */
+#app[data-layout="compact"]:not([data-state="detail"]) .chao {
+  cursor: pointer;
+  border-radius: var(--radius-sm); /* only so the focus ring gets soft corners */
+}
+#app[data-layout="compact"]:not([data-state="detail"]) .chao::after { /* hit area at least --space-7 wide, layout untouched */
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline: min(0px, (100% - var(--space-7)) / 2);
+}
+#app[data-layout="compact"][data-state="thinking"] .chao { cursor: progress; }
+
+.bubble {
+  --bubble-min-lines: 3;
+  position: relative;
+  display: flex;
+  align-items: center; /* a one-line message sits in the middle of the reserved height */
+  min-inline-size: 0;
+  max-inline-size: var(--width-bubble);
+  min-block-size: calc(var(--bubble-min-lines) * 1lh + 2 * var(--space-4) + 2 * var(--border-hairline)); /* lines change, the layout does not */
+  margin-block-end: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-bubble) var(--radius-bubble) var(--radius-bubble) var(--radius-bubble-tail);
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+  color: var(--color-text);
+  transform-origin: 0 100%; /* the corner that points at the Chao: the intro pop grows from here */
+}
+/* Tail: a wedge on the bubble's left edge, low, pointing down-left at the Chao. Two clipped layers outside the box
+   (rim, then fill 1 px inside it), so the translucent plastic never doubles up over the box. */
+.bubble::before,
+.bubble::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: calc(-1 * var(--bubble-tail));
+  inset-block-end: var(--space-3);
+  inline-size: calc(var(--bubble-tail) + var(--border-hairline));
+  block-size: calc(var(--bubble-tail) * 1.5);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+.bubble::before { background: var(--plastic-rim); }
+.bubble::after {
+  inset-block-end: calc(var(--space-3) + var(--border-hairline));
+  inset-inline-start: calc(-1 * var(--bubble-tail) + 1.6 * var(--border-hairline));
+  background: var(--plastic-fill);
+}
+
+[data-hidden] { visibility: hidden; } /* bubble and form before the intro reveals them (not reachable by keyboard or screen reader) */
+
+/* ---------- Feeling form ---------- */
+.feeling {
+  display: flex;
+  gap: var(--space-2);
+  inline-size: min(100%, var(--width-input));
+}
+
+.feeling__input {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: var(--space-7);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface);
+  border: var(--border-control) solid var(--color-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-plastic);
+  color: var(--color-text);
+}
+.feeling__input::placeholder { color: var(--color-text-muted); }
+.feeling__input[readonly] { color: var(--color-text-muted); cursor: progress; }
+.feeling__input[aria-invalid="true"] { /* empty submit: the edge turns twice as thick (a shape cue, not only a colour one; also with reduced motion) */
+  border-color: var(--color-border-hover);
+  box-shadow: inset 0 0 0 var(--border-control) var(--color-border-hover), var(--shadow-plastic);
+}
+
+.feeling__submit {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  min-block-size: var(--space-7);
+  padding: 0 var(--space-5);
+  border: var(--border-control) solid transparent;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(var(--accent-gloss), transparent var(--accent-gloss-stop)), var(--color-accent); /* gloss stays above the label */
+  box-shadow: var(--shadow-plastic);
+  color: var(--color-on-accent);
+  font-weight: var(--weight-bold);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.feeling__go,
+.feeling__busy { grid-area: 1 / 1; } /* both labels in one cell: the button keeps the width of the longer one */
+.feeling__busy,
+.feeling[aria-busy="true"] .feeling__go { visibility: hidden; }
+.feeling[aria-busy="true"] .feeling__busy { visibility: visible; }
+.feeling__submit:disabled { cursor: progress; opacity: var(--disabled-opacity); }
+
+@media (hover: hover) {
+  .theme-toggle:hover,
+  .sound-toggle:hover {
+    background: var(--plastic-bg-hover);
+    border-color: var(--plastic-rim-hover);
+  }
+  .theme-toggle:hover::after,
+  .sound-toggle:hover::after,
+  .feeling__submit:not(:disabled):hover::after { opacity: 1; }
+  .feeling__input:not([readonly]):hover { border-color: var(--color-border-hover); }
+}
+
+/* ---------- Compact layout: results / no-results / error / detail, until the Chao is clicked (§18.1). The games row: results.css ---------- */
+#app[data-layout="compact"] {
+  --title-size: var(--text-2xl);
+  --title-bounce-distance: var(--title-bounce-distance-compact);
+  --chao-current: var(--chao-size-compact);
+}
+#app[data-layout="compact"] .screen { grid-template-rows: 0 auto 1fr; padding-block-start: var(--space-4); } /* clear of the theme toggle, title bounce included */
+#app[data-layout="compact"] .bubble { --bubble-min-lines: 2; } /* every compact line fits in 2 lines, also at 390 px */
+
+/* ---------- Footer credit (text on background; halo in holo.css) ---------- */
+.credit {
+  padding: var(--space-4) var(--gutter) var(--space-5);
+  text-align: center;
+  text-wrap: balance;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.credit a { /* 44 px tall hit area without changing the line (inline padding does not move the text) */
+  padding: var(--space-4) var(--space-2);
+  margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-2));
+}
+
+@media (max-width: 29.99rem) { /* phones: the input gets the full width (the placeholder fits) and the button a full-width tap target */
+  .feeling { flex-direction: column; }
+}
+
+@media (max-width: 23.4rem) { /* narrow phones (< 375 px): several compact lines need 3 lines */
+  #app[data-layout="compact"] .bubble { --bubble-min-lines: 3; }
+}
+
+@media (min-width: 768px) {
+  .bubble { --bubble-min-lines: 2; }
+}
+
+@media (max-height: 30rem) { /* short screens (phones in landscape): the whole intro fits above the fold */
+  #app {
+    --title-size: var(--text-2xl);
+    --chao-current: var(--chao-size-compact);
+  }
+  .top-bar { padding-block-start: var(--space-2); }
+  .screen { grid-template-rows: 0.3fr auto 1fr; padding-block-end: var(--space-3); }
+  .screen__stage { gap: var(--space-2); }
+  .bubble { --bubble-min-lines: 2; margin-block-end: var(--space-3); }
+  .credit { padding-block: var(--space-2) var(--space-3); }
+}
+
+@media (max-height: 42rem) { /* short screens in compact (375x667, 320x568, 1280x600): the stage gives height to the games row */
+  #app[data-layout="compact"] { --title-size: var(--text-xl); }
+  #app[data-layout="compact"] .screen { padding-block-start: var(--space-2); }
+  #app[data-layout="compact"] .screen__stage { gap: var(--space-2); }
+  #app[data-layout="compact"] .bubble { margin-block-end: var(--space-3); }
+}
+
+@media (max-height: 30rem) and (min-width: 40rem) { /* phones in landscape, compact: narrator and form side by side, so half of the cases show */
+  #app[data-layout="compact"] .screen__stage {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "title title" "narrator form";
+    align-items: end;
+    column-gap: var(--space-5);
+    max-inline-size: var(--width-page);
+  }
+  #app[data-layout="compact"] .screen__title { grid-area: title; }
+  #app[data-layout="compact"] .narrator { grid-area: narrator; }
+  #app[data-layout="compact"] .feeling { grid-area: form; margin-block-end: var(--space-3); }
+}

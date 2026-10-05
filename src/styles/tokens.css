@@ -1,0 +1,505 @@
+/* Game Feelings — design tokens (owner: ui-designer). Rationale and recipes in DESIGN.md.
+   Themes: light (pearl iridescent) is the default. Dark (deep PlayStation blue) applies via
+   prefers-color-scheme unless data-theme="light", or when data-theme="dark".
+   The selectors below only switch `color-scheme`; every themed color is written once as
+   light-dark(<light>, <dark>), so there is a single definition per token. */
+
+/* ---------- Fonts (self-hosted, OFL 1.1, latin subset) ---------- */
+@font-face {
+  font-family: "Anybody";
+  src: url("/fonts/anybody-italic-var-latin.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 700 900; /* file goes 100–900; clamped: no thin weights */
+  font-stretch: 100% 150%;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("/fonts/atkinson-hyperlegible-next-var-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 700; /* file goes 200–800; clamped to regular–bold */
+  font-display: swap;
+}
+
+/* ---------- Theme switch ---------- */
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --grain-image: var(--grain-image-dark);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --grain-image: var(--grain-image-dark);
+}
+
+/* ---------- Registered properties ---------- */
+/* Chao mouth/body driver, 0..1. Registered so the no-audio talk cycle can animate it
+   (an unregistered custom property cannot interpolate). JS sets it inline for real audio (phase 4c). */
+@property --voice-level {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* ---------- Tokens ---------- */
+:root {
+  /* Knoxstation title lettering (SPEC §9 Ref 1). Decorative only, never text-on-bg. */
+  --knox-fill: #ffffff;
+  --knox-extrude-1: #57a0ff; /* inner extrusion: rounded ring around each glyph */
+  --knox-extrude-2: #1a7cff; /* 3D drop, swept down-right */
+  --knox-highlight: #74beff; /* lower half of the fill gloss */
+  --knox-shine: #dffdff;     /* specular band across the fill */
+  --knox-contour: light-dark(#0b1d55, #020f38); /* outermost hairline: separates the title from cyan ribbons in both themes */
+
+  /* Title geometry. Recipe in DESIGN.md §3.1. */
+  --knox-stroke: 0.05em;                 /* ring radius = width of the extrude-1 border */
+  --knox-step: 0.01em;                   /* extrusion step: ≤1px up to 100px type; 16 steps = 0.16em */
+  --knox-contour-width: max(1px, 0.015em);
+  --knox-skew: -6deg;                    /* extra slant on top of Anybody's ~12° italic */
+
+  /* 16-point ring of text-shadows = stroke with round joins (text-stroke miters). */
+  --knox-ring:
+    var(--knox-stroke) 0 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * 0.924) calc(var(--knox-stroke) * 0.383) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * 0.707) calc(var(--knox-stroke) * 0.707) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * 0.383) calc(var(--knox-stroke) * 0.924) 0 var(--knox-extrude-1),
+    0 var(--knox-stroke) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * -0.383) calc(var(--knox-stroke) * 0.924) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * -0.707) calc(var(--knox-stroke) * 0.707) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * -0.924) calc(var(--knox-stroke) * 0.383) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * -1) 0 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * -0.924) calc(var(--knox-stroke) * -0.383) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * -0.707) calc(var(--knox-stroke) * -0.707) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * -0.383) calc(var(--knox-stroke) * -0.924) 0 var(--knox-extrude-1),
+    0 calc(var(--knox-stroke) * -1) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * 0.383) calc(var(--knox-stroke) * -0.924) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * 0.707) calc(var(--knox-stroke) * -0.707) 0 var(--knox-extrude-1),
+    calc(var(--knox-stroke) * 0.924) calc(var(--knox-stroke) * -0.383) 0 var(--knox-extrude-1);
+
+  /* Extrusion by doubling: each drop-shadow copies everything before it, offset by N steps,
+     so offsets 1, 2, 4, 8 steps fill 16 contiguous steps (0.16em deep; one step ≤1px up to
+     100px type, so no visible stair-steps). Then 3 stacked zero-offset soft shadows (blur = 0.6 of the contour width) add the outer contour: it is round in every direction, so no stair-steps on diagonals at DPR 2.
+     Apply as `filter` on the ring layer only. */
+  --knox-extrusion:
+    drop-shadow(var(--knox-step) var(--knox-step) 0 var(--knox-extrude-2))
+    drop-shadow(calc(var(--knox-step) * 2) calc(var(--knox-step) * 2) 0 var(--knox-extrude-2))
+    drop-shadow(calc(var(--knox-step) * 4) calc(var(--knox-step) * 4) 0 var(--knox-extrude-2))
+    drop-shadow(calc(var(--knox-step) * 8) calc(var(--knox-step) * 8) 0 var(--knox-extrude-2))
+    drop-shadow(0 0 calc(var(--knox-contour-width) * 0.6) var(--knox-contour))
+    drop-shadow(0 0 calc(var(--knox-contour-width) * 0.6) var(--knox-contour))
+    drop-shadow(0 0 calc(var(--knox-contour-width) * 0.6) var(--knox-contour));
+
+  /* Fill gloss, one band per line (background-size: 100% 1lh). */
+  --knox-gloss: linear-gradient(180deg,
+    var(--knox-fill) 0% 40%,
+    var(--knox-shine) 40% 50%,
+    var(--knox-fill) 50% 72%,
+    var(--knox-highlight) 100%);
+
+  /* Seven sampled stops of SPEC §9 ref 2 (light) and their blue counterparts (dark). They no longer
+     feed the live shader (that uses --holo-pearl…ridge below): only the static CSS fallback
+     (--holo-base, --holo-sweep) and the style-tile swatches use them. */
+  --holo-1: light-dark(#f0ffff, #020f38);
+  --holo-2: light-dark(#f0f0ff, #061b55);
+  --holo-3: light-dark(#d8d8f0, #0a2a78);
+  --holo-4: light-dark(#f0d8f0, #0f3590);
+  --holo-5: light-dark(#c0f0ff, #183f9c);
+  --holo-6: light-dark(#a8d8f0, #22307e);
+  --holo-7: light-dark(#d8c0f0, #1a2366);
+
+  /* ---- Phase 2: holographic background (recipe in DESIGN.md §12) ----
+     The live background is a WebGL fragment shader (src/holo/). It reads these six colors
+     through a probe element (see DESIGN.md §12.4), so they follow the theme. Light = the
+     sampled Digivalet palette (SPEC §9 ref 2; --holo-cyan is the ribbon core sampled from a
+     frame, deeper than the 7-stop average). Dark = PlayStation blue silk. */
+  --holo-pearl: light-dark(#f4fcff, #0a2579);  /* broad flat areas */
+  --holo-pink: light-dark(#efd0f3, #2335a8);   /* fringe on both sides of a ribbon */
+  --holo-lilac: light-dark(#d9c6f5, #101c68);
+  --holo-cyan: light-dark(#a6e6fa, #0e55ad);   /* ribbon core */
+  --holo-shade: light-dark(#94c4f0, #04134a);  /* crease inside the ribbon core */
+  --holo-ridge: light-dark(#ffffff, #9fe0ff);  /* thin specular ridge lines */
+
+  /* Static fallback (no WebGL, context lost, or script not run): painted on .holo itself,
+     under the canvas. No animation, no layers. */
+  --holo-base: linear-gradient(165deg, var(--holo-1), var(--holo-2) 45%, var(--holo-3));
+  --holo-sweep:
+    radial-gradient(circle at 55% 45%, var(--holo-1), transparent 22%),
+    conic-gradient(from 200deg at 55% 45%,
+    var(--holo-1) 0%, var(--holo-5) 9%, var(--holo-2) 19%, var(--holo-4) 29%, var(--holo-1) 39%,
+    var(--holo-7) 49%, var(--holo-2) 58%, var(--holo-6) 67%, var(--holo-1) 77%, var(--holo-4) 87%, var(--holo-1) 100%);
+
+  /* Grain (vibe images 2 and 6): fine, dense, low-alpha speckle from SVG fractal noise, ~0.6 KB,
+     no request. Two files because a data-URI image cannot use light-dark(): light specks on
+     pearl, pale-blue specks on blue (never navy: it read as dashes). The theme selectors above
+     swap --grain-image. color-interpolation-filters=sRGB so the stated color is the rendered one. */
+  --grain-image-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 2.6 0 0 0 -0.95'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-image-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.62 0 0 0 0 0.82 0 0 0 0 1 2.2 0 0 0 -0.85'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-image: var(--grain-image-light);
+  --grain-size: 256px;
+  --grain-opacity: 0.22;       /* a plain number: light-dark() only takes colors */
+
+  /* Halftone (vibe image 6): staggered dot grid (two offset layers = 45° screen) in ONE patch
+     at the TOP-RIGHT corner (behind the theme toggle, away from the footer and the narrator),
+     fading toward the content. */
+  --halftone-dot: light-dark(rgb(64 64 128 / 0.2), rgb(116 190 255 / 0.28)); /* alpha lives in the color */
+  --halftone-size: 8px;
+  --halftone-image:
+    radial-gradient(circle, var(--halftone-dot) 0 1.2px, transparent 1.7px) 0 0 / var(--halftone-size) var(--halftone-size),
+    radial-gradient(circle, var(--halftone-dot) 0 1.2px, transparent 1.7px) calc(var(--halftone-size) / 2) calc(var(--halftone-size) / 2) / var(--halftone-size) var(--halftone-size);
+  --halftone-patch: min(40vmin, 24rem);   /* phones; >=768px below */
+  --halftone-mask: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+
+  /* Halo for text that sits directly on the background (footer): a soft plate in the bg tone. */
+  --text-halo: 0 0 0.45em light-dark(rgb(244 252 255 / 0.95), rgb(2 15 56 / 0.95)), 0 0 0.2em light-dark(rgb(244 252 255 / 0.95), rgb(2 15 56 / 0.95));
+
+  /* Core color roles */
+  --color-bg: light-dark(#eef4ff, #020f38);       /* solid fallback under the holo background */
+  --color-surface: light-dark(#f8fbff, #08205f);  /* opaque: input fill, panel body */
+  --color-text: light-dark(#0b1d55, #f2f8ff);     /* PlayStation navy, never black */
+  --color-text-muted: light-dark(#2f4378, #d4e3f8);
+  --color-accent: light-dark(#0745b0, #c2e3ff);   /* text-safe accent: links, emotion word */
+  --color-on-accent: light-dark(#ffffff, #020f38);
+  --color-border: light-dark(#3a5cad, #74beff);   /* control edges ≥3:1 */
+  --color-border-hover: light-dark(#0745b0, #c2e3ff);
+  --color-border-soft: light-dark(rgb(255 255 255 / 0.85), rgb(116 190 255 / 0.5)); /* decorative rim */
+  --color-focus: light-dark(#0745b0, #74beff);
+  --color-scrim: light-dark(rgb(11 29 85 / 0.45), rgb(1 8 30 / 0.6));
+
+  /* Borders */
+  --border-hairline: 1px;
+  --border-control: 2px;
+
+  /* Translucent plastic (ice-blue PS2 controller). Recipe in DESIGN.md §5. */
+  --plastic-fill: light-dark(rgb(255 255 255 / 0.6), rgb(8 32 95 / 0.38));
+  --plastic-fill-hover: light-dark(rgb(255 255 255 / 0.8), rgb(30 80 175 / 0.42));
+  --plastic-tint: light-dark(rgb(192 240 255 / 0.35), rgb(26 124 255 / 0.12));
+  --plastic-rim: var(--color-border-soft);
+  --plastic-rim-hover: light-dark(#ffffff, rgb(194 227 255 / 0.9));
+
+  /* Mirrored glass (detail panel only) */
+  --glass-fill: light-dark(rgb(248 251 255 / 0.78), rgb(8 32 95 / 0.72));
+  --glass-blur: 18px;
+  --glass-saturate: 1.4;
+
+  /* Chrome (Sonic poster top bar). Identical in both themes: chrome is chrome. */
+  --chrome-gradient: linear-gradient(180deg, #ffffff 0%, #e6ecf5 40%, #aab7ca 50%, #eef2f8 62%, #c9d3e1 100%);
+  --chrome-edge: #7d8ba3;
+  --chrome-text: #0b1d55;
+  --chrome-clip: polygon(0 0, 100% 0, 100% calc(100% - var(--cut-corner)), calc(100% - var(--cut-corner)) 100%, 0 100%);
+
+  /* Iridescent hairline (PS2 case spine rainbow line). Same in both themes, ref-2 colors only. */
+  --iridescent-line: linear-gradient(90deg, #c0f0ff, #d8c0f0, #f0d8f0, #a8d8f0, #c0f0ff);
+
+  /* Shadows and glows. Only the color parts are themed. */
+  --shadow-plastic:
+    inset 0 1px 0 light-dark(rgb(255 255 255 / 0.95), rgb(223 253 255 / 0.75)),
+    inset 0 10px 10px -10px light-dark(rgb(255 255 255 / 0.9), rgb(223 253 255 / 0.4)),
+    inset 0 -10px 18px light-dark(rgb(26 124 255 / 0.12), rgb(116 190 255 / 0.14)),
+    0 14px 32px -14px light-dark(rgb(11 29 85 / 0.35), rgb(0 0 0 / 0.6));
+  --shadow-plastic-pressed:
+    inset 0 2px 6px light-dark(rgb(11 29 85 / 0.25), rgb(0 0 0 / 0.5)),
+    inset 0 -1px 0 light-dark(rgb(255 255 255 / 0.7), rgb(223 253 255 / 0.3));
+  --shadow-raised: 0 18px 40px -16px light-dark(rgb(11 29 85 / 0.45), rgb(0 0 0 / 0.7));
+  --shadow-panel: 0 30px 80px -20px light-dark(rgb(11 29 85 / 0.5), rgb(0 0 0 / 0.75));
+  --glow-accent:
+    0 0 0 1px light-dark(rgb(116 190 255 / 0.6), rgb(116 190 255 / 0.7)),
+    0 0 24px light-dark(rgb(116 190 255 / 0.55), rgb(116 190 255 / 0.6));
+
+  /* Typography */
+  --font-display: "Anybody", "Arial Black", system-ui, sans-serif;
+  --font-text: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-stretch-display: 150%;
+  --font-stretch-display-compact: 125%; /* long display strings in tight spots */
+  --weight-regular: 400;
+  --weight-bold: 700;
+  --weight-display: 800;
+  --weight-display-heavy: 900; /* title only */
+
+  /* Modular scale: ratio 1.2 on base 16px at 360px → ratio 1.333 on base 18px at 1440px.
+     Display sits outside the scale (logotype). */
+  --text-sm: clamp(0.8125rem, 0.792rem + 0.093vw, 0.875rem);  /* 13→14  footer, meta, labels */
+  --text-base: clamp(1rem, 0.958rem + 0.185vw, 1.125rem);     /* 16→18  body, input */
+  --text-lg: clamp(1.2rem, 1.1rem + 0.444vw, 1.5rem);         /* 19→24  narrator bubble */
+  --text-xl: clamp(1.44rem, 1.253rem + 0.83vw, 2rem);         /* 23→32  detail title */
+  --text-2xl: clamp(1.728rem, 1.415rem + 1.391vw, 2.667rem);  /* 28→43  compact title (results) */
+  --text-display: clamp(2.5rem, 1.333rem + 5.185vw, 6rem);    /* 40→96  "Game Feelings" */
+
+  --leading-display: 0.95;
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.55;
+  --tracking-display: -0.015em;
+  --tracking-meta: 0.06em;
+  --measure: 60ch;
+
+  /* Spacing (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --gutter: clamp(1rem, 4vw, 3rem); /* page side padding: 16px on phones */
+
+  /* Layout sizes */
+  --width-input: 36rem;
+  --width-bubble: 30rem;
+  --width-panel: 64rem; /* phase 6: 60 → 64rem so the text column of the detail keeps ~45ch at 1280 (DESIGN.md §16.2) */
+  --width-page: 90rem;
+  --chao-size: 6rem;                               /* block-size of Chao; desktop value below */
+  --chao-size-compact: calc(var(--chao-size) * 0.6); /* results / no-results / error */
+  --chao-current: var(--chao-size);                  /* what the narrator uses; the compact rule swaps it (DESIGN.md §12.7) */
+
+  /* Radii: hierarchy, not one radius for everything */
+  --radius-pill: 999px;           /* input, toggle, buttons */
+  --radius-bubble: 1.75rem;
+  --radius-bubble-tail: 0.375rem; /* the corner pointing at Chao */
+  --radius-panel: 1.25rem;
+  --radius-case: 0.375rem;        /* PS2 case corners */
+  --radius-sm: 0.5rem;
+  --cut-corner: 1.25rem;          /* chrome diagonal cut (see --chrome-clip) */
+
+  /* Focus */
+  --focus-width: 3px;
+  --focus-offset: 3px;
+
+  /* Motion */
+  --dur-instant: 100ms;
+  --dur-fast: 160ms;  /* hover, press */
+  --dur-base: 260ms;  /* state changes, bubble text swap */
+  --dur-slow: 480ms;  /* intro → results move, panel open */
+  --dur-enter: 1000ms; /* Chao entrance: travel + 3 hops + landing (DESIGN.md §13) */
+  --dur-bob: 1.5s;    /* Knox bounce loop / Chao thinking sway */
+  --dur-holo: 15s;    /* background cycle (ref 2 video length), in SECONDS. Read by src/holo/holo.ts (the one source of the shader period): shader phase = 2π·t/period, integer harmonics only */
+  --stagger: 60ms;    /* per PS2 case on results enter */
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-in-out: cubic-bezier(0.42, 0, 0.58, 1); /* = CSS ease-in-out, as in the Knox bounce */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* small overshoot: Chao landing, cases settling */
+
+  --motion-scale: 1;     /* multiply every translate/rotate/scale delta by this; 0 under reduced motion */
+  --title-bounce-distance: -8px;         /* Knox title bounce at full size (ref 1 CSS). Wrapper only. */
+  --title-bounce-distance-compact: -4px; /* same bounce when the title is compact (results / no-results / error) */
+  --title-size: var(--text-display);     /* compact state sets this to --text-2xl (DESIGN.md §12.7) */
+  --shake-distance: 6px; /* empty-input shake */
+  --dur-shake: 320ms;    /* empty-input shake: 3 swings, settles */
+  --reveal-rise: 12px;   /* intro: the form rises this much as it fades in */
+
+  /* ---- Phase 4b: single screen (recipe in DESIGN.md §14) ---- */
+  --chao-headroom: 0.25;                   /* free space above the Chao, x --chao-current: the happy jump (22 %) + ball */
+  --bubble-tail: 0.875rem; /* the narrator bubble's tail (points at the Chao), outside the box */
+  --accent-gloss: rgb(255 255 255 / 0.35); /* top highlight of the accent (submit) button */
+  --accent-gloss-stop: 38%;                /* ...fades out above the label, so contrast is the accent's own */
+  --disabled-opacity: 0.85;                /* busy submit button: still legible (6.0:1 light, 10.7:1 dark) */
+  --plastic-bg: linear-gradient(var(--plastic-tint), transparent 60%), var(--plastic-fill);             /* DESIGN §5 recipe as one value */
+  --plastic-bg-hover: linear-gradient(var(--plastic-tint), transparent 60%), var(--plastic-fill-hover);
+  --tilt-max: 12deg;     /* PS2 case hover tilt (each axis, at the case edge) */
+  --press-scale: calc(1 - 0.04 * var(--motion-scale)); /* 0.96, or 1 under reduced motion */
+
+  /* Chao outline: figure/ground separation on any background (a cyan Chao over a cyan ribbon
+     vanishes without it). Apply as `filter: var(--chao-outline)` on EVERY Chao image
+     (DESIGN.md §12.11). Pale rim, then a thin navy contour outside it, then a soft drop shadow:
+     the rim reads on dark silk, the contour on pale ribbons, the shadow lifts it off both. */
+  --chao-rim: light-dark(#ffffff, #dffdff);
+  --chao-contour: light-dark(rgb(11 29 85 / 0.85), rgb(2 15 56 / 0.95));
+  --chao-shadow: light-dark(rgb(11 29 85 / 0.32), rgb(0 4 28 / 0.6));
+  /* Every length is in em = the Chao's height (.chao sets font-size: var(--chao-current)), so the outline
+     scales with the Chao: at 200 px it is 0.8 / 1 / 6 / 8 px as before; on small Chaos rim and contour
+     stop at 0.4 / 0.5 px (thinner would lose the figure-ground edge) and the shadow shrinks to 1.7 / 2.3 px at 58 px. */
+  --chao-rim-blur: max(0.4px, 0.004em);
+  --chao-contour-blur: max(0.5px, 0.005em);
+  --chao-outline:
+    drop-shadow(0 0 var(--chao-rim-blur) var(--chao-rim))
+    drop-shadow(0 0 var(--chao-rim-blur) var(--chao-rim))
+    drop-shadow(0 0 var(--chao-contour-blur) var(--chao-contour))
+    drop-shadow(0 0 var(--chao-contour-blur) var(--chao-contour))
+    drop-shadow(0 0 var(--chao-contour-blur) var(--chao-contour))
+    drop-shadow(0 0.03em 0.04em var(--chao-shadow));
+
+  /* ---- Phase 4a: Chao rig motion (recipe in DESIGN.md §13) ----
+     Percent translates are relative to each part's own box, so every amplitude scales with
+     --chao-current. Angles in deg, scale deltas as plain numbers. */
+  --chao-lag: 160ms;            /* the ball's copy of the body motion runs this late (slow moods only) */
+  --chao-float-dur: 3.2s;       /* idle float + breathe loop */
+  --chao-float-y: -2.5%;        /* float height (of the Chao box) */
+  --chao-breathe: 0.012;        /* stretch at the top of the float */
+  --chao-ball-dur: 2.3s;        /* ball bob, its own beat (not a multiple of the float) */
+  --chao-ball-bob: -10%;        /* of the ball box */
+  --chao-ball-pop: -16%;        /* ball pops up when the body lands (enter, happy) */
+  --chao-ball-lift: 12%;        /* ball pose offset: up for think/happy, sideways for error */
+  --chao-ball-sink: 4%;         /* sad: the ball sinks a little but still floats clear of the head */
+  --chao-orbit-dur: 1.2s;       /* think: ball circles like a loading dot */
+  --chao-orbit-r: 28%;
+  --chao-dizzy-dur: 450ms;      /* error: 2 fast, wide circles */
+  --chao-dizzy-r: 40%;
+  --chao-sway: 4deg;            /* think sway amplitude */
+  --chao-sway-dur: 2.2s;        /* think sway period: its own beat, deliberately not the title bounce (1.5 s) nor the float (3.2 s) */
+  --chao-lean: 5deg;            /* listen leans toward the input; other moods use fractions */
+  --chao-gaze: 4%;              /* eye shift, of the eyes box */
+  --chao-squint: 0.82;          /* eyes scaleY in happy / sad */
+  --chao-lid-half: 0.7;         /* think: half-lidded */
+  --chao-eyes-wide: 1.08;       /* error: startled */
+  --chao-gasp: 0.35;            /* error: small open mouth */
+  --chao-grin: 0.8;             /* happy: open mouth without audio */
+  --chao-droop: 0.04;           /* sad: wider and shorter */
+  --chao-wing-droop: -12deg;    /* negative = wing tip down; beyond ~-12deg the trimmed wing root shows */
+  --chao-flap: 16deg;
+  --chao-flap-dur: 180ms;
+  --chao-hop-y: -16%;           /* enter hop height (of the Chao box) */
+  --chao-jump-y: -22%;          /* happy jump height */
+  --chao-jump-dur: 820ms;
+  --chao-squash: 0.12;          /* landing squash / launch stretch */
+  --chao-shrug-dur: 700ms;
+  --chao-shrug-y: -3%;
+  --chao-jitter: 7deg;          /* error head shake */
+  --chao-jitter-dur: 600ms;
+  --chao-error-dur: 1000ms;     /* error: shake, then droop into the sad pose */
+  --chao-blink-dur: 150ms;
+  --chao-blink-closed: 0.08;
+  --chao-talk-dur: 900ms;       /* no-audio talk cycle, ~4.5 syllables/s */
+  --chao-talk-stretch: 0.06;    /* body stretch at --voice-level 1 */
+  --chao-talk-squash: 0.035;
+  --chao-blend-dur: var(--dur-base); /* JS cross-fade between moods (§13.4) */
+  --chao-enter-from: -100vw;    /* fully off-screen left wherever the rig sits */
+  --chao-mouth-fill: #4a0716;   /* character colors: same in both themes */
+  --chao-tongue: #d9506b;
+  --ease-rise: cubic-bezier(0.25, 0.6, 0.45, 1); /* hop up: decelerate */
+  --ease-fall: cubic-bezier(0.55, 0, 0.75, 0.4); /* hop down: gravity */
+  --ease-sway: cubic-bezier(0.84, 0, 0.16, 1);   /* think sway (2 stops, alternate): dwell at the ends, fast through the middle */
+
+  /* ---- Phase 5: games row, PS2-style cases (recipe in DESIGN.md §15) ---- */
+  --case-aspect: calc(135 / 190); /* DVD-style PS2 case; with the 12 % band the cover is 3:4 */
+  --case-per-row: 5.3;         /* cases across the shelf; the fraction makes the next one peek (3.4 up to 48rem, 2.3 below 30rem) */
+  --case-gap: clamp(1rem, 1.8vw, 1.5rem);
+  --case-min-w: 9rem;          /* 144 px: the title still fits 3 lines at 13 px */
+  --case-max-w: 16rem;         /* 20rem from 100rem wide */
+  --shelf-max-w: 120rem;       /* the row may use more than --width-page on big screens */
+  --shelf-reserve: 24rem;      /* screen height the compact stage + chrome take: caps the case height on short screens */
+  --shelf-pad-top: var(--space-5);    /* inside the scroller: room for the lift, the tilt and the focus ring */
+  --shelf-pad-bottom: var(--space-7); /* ... and for the hover shadow (the scroller clips at its padding box) */
+  --shelf-fade: 3rem;          /* right-edge shade while there are more cases */
+  --shelf-edge: light-dark(rgb(11 29 85 / 0.32), rgb(0 4 28 / 0.55));
+  --shelf-busy-opacity: 0.45;  /* the previous row while a new search runs (inert too) */
+  --case-band: 12%;            /* black top band, of the case height */
+  --case-band-size: clamp(0.6875rem, 5.6cqi, 0.875rem); /* year in the band: never under 11 px */
+  --case-line-w: 2px;          /* rainbow hairline under the band */
+  --case-perspective: 900px;
+  --case-lift: -6px;           /* hover / focus */
+  --case-focus-tilt: 4deg;     /* keyboard focus shows the 3D without a pointer */
+  --case-focus-offset: 4px;
+  --case-rise: 40px;           /* entrance from below */
+  /* Title plate (§15.6 — these values hold the measured >= 4.5:1 on a white cover): */
+  --case-title-size: clamp(0.8125rem, 8.6cqi, 1.25rem);      /* 13 px at 144 px wide, 20 px at 250 */
+  --case-title-size-noimg: clamp(1rem, 11cqi, 1.5rem);
+  --case-title-fade: 1.6em;    /* the plate fades in over this much above the text, then stays at --case-scrim */
+  --case-title-inset: 7%;      /* bottom padding under the text */
+  --case-scrim: rgb(2 8 30 / 0.9);
+  /* A game case is a printed object: same colours in both themes, except the rim that separates it from the background */
+  --case-plastic: #070a12;
+  --case-band-bg: #04060c;
+  --case-text: #ffffff;
+  --case-sleeve: rgb(255 255 255 / 0.16);
+  --case-sheen: linear-gradient(110deg, transparent 38%, rgb(255 255 255 / 0.2) 47%, rgb(255 255 255 / 0.05) 53%, transparent 60%);
+  --case-iridescent: linear-gradient(90deg, #ff4fd8, #8b5cff 25%, #2fb8ff 50%, #3dffc8 75%, #ffe14f); /* saturated rainbow hairline (vibe image 8) */
+  --case-fallback: linear-gradient(160deg, #0a2579, #1a7cff 60%, #74beff);
+  --case-rim: light-dark(rgb(11 29 85 / 0.6), rgb(194 227 255 / 0.7));
+  --case-shadow-rest: 0 3px 0 -1px light-dark(rgb(11 29 85 / 0.35), rgb(0 0 0 / 0.55)); /* hard lip, no blur: 20 cases carry it (a blurred one dropped frames, §15.5) */
+  --case-shadow-lift: 0 22px 36px -14px light-dark(rgb(11 29 85 / 0.5), rgb(0 0 0 / 0.75)); /* only the hovered / focused case shows it */
+
+  /* ---- Phase 6: detail panel (recipe in DESIGN.md §16) ----
+     <dialog> + showModal(): it lives in the top layer, so it needs no z-index (--z-scrim / --z-panel removed).
+     Glass rim (mirrored glass, §5) around a chrome title bar and a technical SHEET: whiteprint in light
+     (blue ink on pearl paper), blueprint in dark (white ink on PlayStation blue) — vibe image 3. The sheet is
+     opaque, so its contrast does not depend on the background (§16.8). */
+  --panel-margin: clamp(0.5rem, 3vw, 2rem);  /* gap between the panel and the viewport edge (8 px on phones) */
+  --panel-rim: var(--space-2);                /* glass frame thickness around bar + sheet */
+  --sheet-bg: light-dark(#f7fbff, #0b3a91);
+  --sheet-ink: light-dark(#0b1d55, #ffffff);
+  --sheet-ink-muted: light-dark(#2f4378, #d6edff);
+  --sheet-link: light-dark(#0745b0, #ffffff);   /* "Source: RAWG", always underlined */
+  --sheet-focus: light-dark(#0745b0, #ffffff);  /* --color-focus dark (#74beff) is too close to the blueprint blue */
+  --sheet-line: light-dark(rgb(7 69 176 / 0.55), rgb(224 255 255 / 0.6)); /* figure frames, dimension lines, inner frame: decorative */
+  --sheet-grid-minor: light-dark(rgb(7 69 176 / 0.07), rgb(224 255 255 / 0.07));
+  --sheet-grid-major: light-dark(rgb(7 69 176 / 0.13), rgb(224 255 255 / 0.12)); /* dark: higher made muted text fail at line crossings (4.46) */
+  --sheet-grid-step: 1rem;
+  --sheet-grid-major-step: 4rem;
+  --sheet-grid:
+    linear-gradient(var(--sheet-grid-major) 1px, transparent 1px) 0 0 / var(--sheet-grid-major-step) var(--sheet-grid-major-step),
+    linear-gradient(90deg, var(--sheet-grid-major) 1px, transparent 1px) 0 0 / var(--sheet-grid-major-step) var(--sheet-grid-major-step),
+    linear-gradient(var(--sheet-grid-minor) 1px, transparent 1px) 0 0 / var(--sheet-grid-step) var(--sheet-grid-step),
+    linear-gradient(90deg, var(--sheet-grid-minor) 1px, transparent 1px) 0 0 / var(--sheet-grid-step) var(--sheet-grid-step),
+    var(--sheet-bg);
+  --sheet-pad: clamp(1rem, 0.6rem + 1.8vw, 2rem);
+  --sheet-frame-inset: 0.625rem;  /* the inner frame line sits this far inside the sheet edge (as outline-offset, negative) */
+  --sheet-empty:                  /* an empty figure frame: crossed box, as in a technical drawing */
+    linear-gradient(to top right, transparent calc(50% - 0.5px), var(--sheet-line) 50%, transparent calc(50% + 0.5px)),
+    linear-gradient(to bottom right, transparent calc(50% - 0.5px), var(--sheet-line) 50%, transparent calc(50% + 0.5px));
+  --dim-tick: 0.5rem;             /* end ticks of a dimension line; also the height of the spec scale bar */
+  --spec-scale: 6rem;             /* scale bar of "Player rating" / "Metacritic" in the spec block (5 units of 1.2rem) */
+  --text-year: clamp(2.5rem, 2.1rem + 1.8vw, 4rem); /* 40→64 release year, outside the scale like --text-display (ref: "Release Date 1994") */
+  --chrome-focus: #0b1d55;        /* focus ring on chrome (same in both themes, like chrome): 7.82:1 on its darkest stop */
+  --chrome-press: rgb(11 29 85 / 0.12); /* close button hover fill on chrome */
+  --detail-scale-min: 0.15;       /* open/close: the panel never starts smaller than this (tiny cases on 320 px) */
+  --detail-drop: 24px;            /* open/close without an opener on screen: the panel rises/drops this much */
+
+  /* ---- Polish: the Chao types its bubble letter by letter, with a blip (DESIGN.md §17) ----
+     Read by screen.ts through time(). Reduced motion does not use them: the line appears at once, silent. */
+  --type-char: 32ms;            /* one character (~31 per second) */
+  --type-pause-sentence: 200ms; /* extra after . ? ! … when a space follows */
+  --type-pause-comma: 100ms;    /* extra after , ; : when a space follows */
+  --type-max: 2200ms;           /* whole line; longer lines speed up evenly to fit */
+
+  /* Z layers (the detail <dialog> is in the top layer and needs none) */
+  --z-bg: -1;
+  --z-base: 0;
+  --z-row: 10;
+  --z-narrator: 20;
+  --z-chrome: 30; /* footer, theme toggle */
+}
+
+@media (max-width: 29.99rem) {
+  :root {
+    --chao-size-compact: calc(var(--chao-size) * 0.8); /* phones: 77 px, not 58 px; small enough beside a 2-line bubble */
+  }
+}
+
+@media (max-width: 48rem) {
+  :root { --case-per-row: 3.4; } /* tablets in portrait (768 px included): ~190 px cases */
+}
+
+@media (max-width: 29.99rem) {
+  :root { --case-per-row: 2.3; }
+}
+
+@media (min-width: 100rem) {
+  :root { --case-max-w: 20rem; } /* 1600 px and up */
+}
+
+@media (min-width: 768px) {
+  :root {
+    --chao-size: clamp(8rem, 14vw, 12.5rem);
+    --halftone-patch: min(48vmin, 30rem);
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-scale: 0;  /* no displacement: things fade in place */
+    --dur-enter: 200ms; /* entrances become short fades */
+    --dur-slow: 200ms;
+    --stagger: 0ms;
+    /* loops (--dur-bob) must be switched off with animation: none; the WebGL background renders one static frame (DESIGN.md §12.4) */
+  }
+}

@@ -1,0 +1,87 @@
+/* Phase 2 (DESIGN §12.5): background host + static fallback, halftone, grain, title bounce. Tokens only. */
+.holo {
+  position: fixed;
+  inset: 0 0 auto 0;
+  block-size: 100vh;
+  block-size: 100lvh; /* lvh: iOS URL bar */
+  z-index: var(--z-bg);
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+  background: var(--holo-sweep), var(--holo-base); /* static fallback, under the canvas */
+}
+
+.holo__canvas {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%; /* no display: it must keep [hidden] */
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out); /* fade in over the CSS fallback */
+}
+
+.holo__canvas--on {
+  opacity: 1; /* holo.ts adds it after the first paint */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo__canvas { transition: none; }
+}
+
+/* Halftone: one patch, top-right corner (behind the theme toggle), above the canvas. */
+.holo::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto auto;
+  z-index: 1;
+  inline-size: var(--halftone-patch);
+  block-size: var(--halftone-patch);
+  background: var(--halftone-image);
+  mask-image: var(--halftone-mask);
+}
+
+/* Grain: whole screen, topmost, static. */
+.holo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--grain-image) 0 0 / var(--grain-size);
+  opacity: var(--grain-opacity);
+}
+
+@media (forced-colors: active) {
+  .holo { display: none; } /* system colors win */
+}
+
+@media (prefers-contrast: more) {
+  .holo::after { display: none; } /* no grain */
+}
+
+@media print {
+  .holo { display: none; }
+}
+
+.credit {
+  text-shadow: var(--text-halo); /* footer: text directly on the background */
+}
+
+/* Title bounce lives on the wrapper so the extrusion filter on .title never re-rasterizes. */
+.title-wrap {
+  display: grid;
+  justify-items: center;
+  will-change: transform;
+  animation: title-bounce var(--dur-bob) var(--ease-in-out) infinite;
+}
+
+@keyframes title-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(var(--title-bounce-distance)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-wrap {
+    animation: none;
+    will-change: auto;
+  }
+}

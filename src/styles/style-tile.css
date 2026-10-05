@@ -1,0 +1,212 @@
+/* Phase 1 style tile: scaffolding to preview tokens, NOT the final layout. Tokens only. */
+
+/* Plastic material of the lab button (DESIGN §5); the real screen styles live in screen.css. */
+.lab-btn {
+  background: linear-gradient(var(--plastic-tint), transparent 60%), var(--plastic-fill);
+  border: var(--border-hairline) solid var(--plastic-rim);
+  box-shadow: var(--shadow-plastic);
+}
+
+/* ---------- Page ---------- */
+.page {
+  display: grid;
+  gap: var(--space-8);
+  max-inline-size: var(--width-page);
+  margin-inline: auto;
+  padding: var(--space-5) var(--gutter) var(--space-8);
+}
+
+/* ---------- Tile sections ---------- */
+.tile {
+  display: grid;
+  gap: var(--space-7);
+}
+
+.tile-section {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+.tile-section__title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: var(--weight-display);
+  font-stretch: var(--font-stretch-display-compact);
+  font-size: var(--text-xl);
+  color: var(--color-text);
+}
+
+code {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* Chrome (DESIGN §5): the edge-colored background is the 1px border; gradient sits inset on top. */
+.chrome-strip {
+  position: relative;
+  isolation: isolate;
+  padding: var(--space-3) var(--space-6) var(--space-3) var(--space-5);
+  background: var(--chrome-edge);
+  clip-path: var(--chrome-clip);
+  color: var(--chrome-text);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: var(--weight-display);
+  font-stretch: var(--font-stretch-display-compact);
+  font-size: var(--text-lg);
+}
+
+.chrome-strip::before {
+  content: "";
+  position: absolute;
+  inset: var(--border-hairline);
+  z-index: -1;
+  background: var(--chrome-gradient);
+  clip-path: var(--chrome-clip);
+}
+
+.type-row {
+  display: grid;
+  gap: var(--space-1);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.type-row--display {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: var(--weight-display);
+  font-stretch: var(--font-stretch-display-compact);
+  font-size: var(--text-2xl);
+}
+
+.type-row code {
+  font-style: normal;
+  font-weight: var(--weight-regular);
+  font-stretch: normal;
+}
+
+.swatches,
+.radii,
+.spaces {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.swatch {
+  display: grid;
+  gap: var(--space-2);
+  inline-size: var(--space-9);
+}
+
+.swatch__chip {
+  block-size: var(--space-8);
+  border-radius: var(--radius-sm);
+  border: var(--border-hairline) solid var(--color-border);
+}
+
+.swatch code {
+  overflow-wrap: anywhere;
+}
+
+.radius {
+  display: grid;
+  place-items: center;
+  inline-size: var(--space-9);
+  block-size: var(--space-8);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: var(--border-control) solid var(--color-border);
+  text-align: center;
+}
+
+.radius code {
+  overflow-wrap: anywhere;
+}
+
+.spaces {
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.space {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.space__bar {
+  block-size: var(--space-3);
+  background: var(--color-accent);
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Desktop ---------- */
+@media (min-width: 768px) {
+  .tile {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- Chao lab (phase 4a scaffolding; moves to ?lab in 4b) ---------- */
+.chao-lab__stage {
+  display: flex;
+  align-items: flex-end;
+  min-block-size: var(--chao-size);
+  padding-block-start: var(--space-4);
+}
+
+.chao-lab__stage--compact {
+  --chao-current: var(--chao-size-compact);
+}
+
+.chao-lab__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.lab-btn {
+  min-block-size: var(--space-7);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.lab-btn[aria-pressed="true"],
+.lab-btn:active {
+  box-shadow: var(--shadow-plastic-pressed);
+}
+
+.lab-btn[aria-pressed="true"] {
+  background: linear-gradient(var(--plastic-tint), transparent 60%), var(--plastic-fill-hover);
+  border-color: var(--color-border-hover);
+}
+
+.lab-btn:active {
+  transform: scale(var(--press-scale));
+}
+
+@media (hover: hover) {
+  .lab-btn:hover {
+    background: linear-gradient(var(--plastic-tint), transparent 60%), var(--plastic-fill-hover);
+    border-color: var(--plastic-rim-hover);
+  }
+}
+
+.chao-lab__row label {
+  font-size: var(--text-base);
+}
+
+.chao-lab__row input[type="checkbox"] {
+  inline-size: var(--space-5);
+  block-size: var(--space-5);
+}

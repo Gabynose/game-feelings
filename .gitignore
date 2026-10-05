@@ -1,0 +1,8 @@
+node_modules
+dist
+.env*
+!.env.example
+verify-shots
+.vercel
+# contains the RAWG key (docs/ is not edited)
+docs/04-CONTENIDO.MD
