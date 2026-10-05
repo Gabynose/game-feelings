@@ -313,7 +313,7 @@ Definidos en `.claude/agents/`. Las skills de cada uno están en su archivo (pre
 
 Resueltas en la ronda 2: personaje (Chao con crédito), IA (Gemini free, key verificada), trending (mañana), pantalla única con narrador, trailer (solo capturas si falta), fila (1 fila, 5 visibles).
 
-## 16. Cambios de UI posteriores a la fase 6 (2026-10-05) — PENDIENTE DE CONFIRMAR
+## 16. Cambios de UI posteriores a la fase 6 (2026-10-05) — construido, verificado y confirmado (input se conserva; en detail el Chao no hace nada)
 
 Alcance: dos ajustes pequeños. Sin dependencias nuevas. Modifica la decisión "el layout compacto persiste" (DESIGN §14), que pasa a tener una salida explícita.
 
